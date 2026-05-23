@@ -1,0 +1,205 @@
+plugins {
+    id 'idea'
+    id 'eclipse'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0.13, 6.2)'
+    id 'org.spongepowered.mixin' version '0.7.+'
+}
+
+base {
+    archivesName = "${fileName}-${mc_version}"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(javaVersion)
+
+jarJar.enable()
+
+minecraft {
+    mappings channel: 'official', version: mc_version
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', ''
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                "${modid}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            jvmArgs '-Xms2G', '-Xmx4G'
+        }
+
+        server {
+            args "--nogui"
+        }
+
+        data {
+            workingDirectory project.file('run-data')
+            args '--mod', "${modid}", '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+    }
+}
+
+sourceSets.main.resources {
+    srcDir 'src/generated/resources'
+}
+
+repositories {
+    maven {
+        url "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        forRepositories(fg.repository)
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
+    maven {
+        url "https://maven.blamejared.com"
+        content {
+            includeGroup "vazkii.patchouli"
+            includeGroupByRegex "net\\.darkhax.*"
+            includeGroupByRegex "com\\.blamejared.*"
+            includeGroup "org.openzen.zencode"
+            includeGroup "mezz.jei"
+        }
+    }
+    maven {
+        // Curios
+        url "https://maven.theillusivec4.top"
+        content {
+            includeGroupByRegex "top\\.theillusivec4.*"
+        }
+    }
+    maven {
+        url "https://maven.shadowsoffire.dev/releases"
+        content {
+            includeGroup "dev.shadowsoffire"
+        }
+    }
+
+    maven { url 'https://maven.shedaniel.me/' }
+    maven { url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
+    maven { url 'https://maven.kosmx.dev/' }
+    maven { url "https://rtxyd.github.io/maven-repo" }
+    maven {
+        name = "Iron's Maven - Release"
+        url = "https://code.redspace.io/releases"
+    }
+
+    maven {
+        name = "Iron's Maven - Snapshots"
+        url = "https://code.redspace.io/snapshots"
+    }
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
+
+    // Mixin
+    annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:${mixin_extras_version}")) {
+        jarJar.ranged(it, "[${mixin_extras_version},)")
+    }
+
+    // Required Dependencies
+    implementation fg.deobf("dev.shadowsoffire:Placebo:${mc_version}-${placebo_version}")
+    implementation fg.deobf("dev.shadowsoffire:ApothicAttributes:${mc_version}-${attributeslib_version}")
+    implementation fg.deobf("dev.shadowsoffire:Apotheosis:${mc_version}-${apotheosis_version}")
+    runtimeOnly fg.deobf("curse.maven:attributefix-280510:4911084")
+
+    // Dev Env Mods
+    runtimeOnly fg.deobf("curse.maven:mmmmmmmmmmmm-225738:6608233")
+    implementation fg.deobf("curse.maven:fallen-gems-affixes-1286177:7785848")
+    runtimeOnly fg.deobf("curse.maven:apotheotic-additions-924640:6393313")
+    implementation fg.deobf("curse.maven:esoteric-reforging-forge-1150370:5989440")
+    implementation fg.deobf("curse.maven:ancient-reforging-985468:5527109")
+    implementation fg.deobf("curse.maven:jade-324717:${jade_file_id}")
+
+    // Libs
+    runtimeOnly fg.deobf("curse.maven:cloth-config-348521:5729105")
+    runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
+    compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}:api")
+    runtimeOnly fg.deobf("curse.maven:geckolib-388172:7025129")
+    runtimeOnly fg.deobf("top.theillusivec4.caelus:caelus-forge:${caelus_version}")
+    runtimeOnly fg.deobf("curse.maven:selene-499980:6611244")
+    implementation fg.deobf("io.github.rtxyd:fallen-lib:${fallen_lib_version}:dev")
+}
+
+mixin {
+    if (project.mixin.toBoolean()) {
+        config "${modid}.mixins.json"
+        add sourceSets.main, "${modid}.refmap.json"
+    }
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    def replaceProperties = [
+            modGroup    : modGroup,
+            modid       : modid,
+            version     : version,
+            modName     : modName,
+            author      : author,
+            desc        : desc,
+            mcVersion   : mc_version,
+            javaVersion : javaVersion,
+            forgeVersion: forge_version
+    ]
+
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties
+    }
+}
+
+tasks.named('jarJar') {
+    dependsOn('reobfJar')
+    finalizedBy('reobfJarJar')
+    archiveClassifier.set('')
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                "Specification-Title"     : fileName,
+                "Specification-Vendor"    : author,
+                "Specification-Version"   : "1.0",
+                "Implementation-Title"    : fileName,
+                "Implementation-Version"  : version,
+                "Implementation-Vendor"   : author,
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "MixinConfigs"            : project.mixin.toBoolean() ? "${modid}.mixins.json" : ""
+        ])
+    }
+    finalizedBy 'reobfJar', 'jarJar'
+}
+
+java {
+    withSourcesJar()
+}
+
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

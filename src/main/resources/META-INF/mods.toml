@@ -1,0 +1,39 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+
+license="LGPL-2.1-or-later"
+issueTrackerURL=""
+showAsResourcePack=false
+
+[[mods]]
+modId="apothic_fishing"
+version="${version}"
+displayName="Apothic Fishing"
+displayURL=""
+logoFile=""
+credits="me"
+authors="Kayn"
+description='''
+A mod that adds a fishing module to apotheosis
+  '''
+
+[[dependencies.apothic_fishing]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.apothic_fishing]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.apothic_fishing]]
+modId="apotheosis"
+mandatory=true
+versionRange="[1.0,)"
+ordering="AFTER"
+side="BOTH"

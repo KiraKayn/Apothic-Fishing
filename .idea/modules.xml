@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Apothic-Fishing.iml" filepath="$PROJECT_DIR$/Apothic-Fishing.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Apothic-Fishing.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Apothic-Fishing.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Apothic-Fishing.test.iml" filepath="$PROJECT_DIR$/.idea/modules/Apothic-Fishing.test.iml" />
     </modules>
   </component>
 </project>
