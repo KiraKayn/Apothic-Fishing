@@ -1,0 +1,71 @@
+{
+  "rarity": "rare",
+  "weight": 10,
+  "quality": 4.0,
+  "dimensions": [
+    "minecraft:overworld",
+    "minecraft:the_nether"
+  ],
+  "biomes": [],
+  "loot": [
+    {
+      "item": "minecraft:diamond",
+      "chance": 0.75,
+      "min_count": 1,
+      "max_count": 3
+    },
+    {
+      "item": "minecraft:emerald",
+      "chance": 0.75,
+      "min_count": 2,
+      "max_count": 5
+    },
+    {
+      "item": "minecraft:quartz",
+      "chance": 0.8,
+      "min_count": 6,
+      "max_count": 16
+    },
+    {
+      "item": "minecraft:nautilus_shell",
+      "chance": 0.4,
+      "min_count": 1,
+      "max_count": 2
+    },
+    {
+      "item": "apotheosis:rare_material",
+      "chance": 0.5,
+      "min_count": 1,
+      "max_count": 2
+    },
+    {
+      "item": "apotheosis:gem_dust",
+      "chance": 0.6,
+      "min_count": 2,
+      "max_count": 4
+    }
+  ],
+  "gems": [],
+  "random_gems": [
+    {
+      "rarity": "rare",
+      "chance": 0.3,
+      "blacklist": []
+    }
+  ],
+  "random_enchantments": [
+    {
+      "chance": 0.20,
+      "min_level": 1,
+      "max_level": 3,
+      "allow_curses": true,
+      "blacklist": ["minecraft:mending"]
+    }
+  ],
+  "gear_sets": [
+    {
+      "gear_set": "#the_nether",
+      "chance": 0.15
+    }
+  ]
+}

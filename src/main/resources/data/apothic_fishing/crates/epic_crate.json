@@ -1,0 +1,67 @@
+{
+  "rarity": "epic",
+  "weight": 6,
+  "quality": 6.0,
+  "dimensions": [
+    "minecraft:the_nether",
+    "minecraft:the_end"
+  ],
+  "biomes": [],
+  "loot": [
+    {
+      "item": "minecraft:netherite_scrap",
+      "chance": 0.3,
+      "min_count": 1,
+      "max_count": 2
+    },
+    {
+      "item": "minecraft:ender_pearl",
+      "chance": 1.0,
+      "min_count": 4,
+      "max_count": 8
+    },
+    {
+      "item": "minecraft:ghast_tear",
+      "chance": 0.75,
+      "min_count": 1,
+      "max_count": 3
+    },
+    {
+      "item": "apotheosis:epic_material",
+      "chance": 0.5,
+      "min_count": 1,
+      "max_count": 3
+    },
+    {
+      "item": "apotheosis:gem_dust",
+      "chance": 0.6,
+      "min_count": 2,
+      "max_count": 5
+    }
+  ],
+  "gems": [],
+  "random_gems": [
+    {
+      "rarity": "epic",
+      "chance": 0.30,
+      "blacklist": []
+    }
+  ],
+  "random_enchantments": [
+    {
+      "chance": 0.35,
+      "min_level": 2,
+      "max_level": 4,
+      "allow_curses": true,
+      "blacklist": [
+        "minecraft:mending"
+      ]
+    }
+  ],
+  "gear_sets": [
+    {
+      "gear_set": "#the_nether",
+      "chance": 0.2
+    }
+  ]
+}

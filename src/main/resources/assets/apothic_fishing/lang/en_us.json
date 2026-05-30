@@ -1,0 +1,24 @@
+{
+  "itemGroup.apothic_fishing.tab": "Apothic Fishing",
+  "config.jade.plugin_apothic_fishing.crate": "Show Crates Tooltip",
+  "item.apothic_fishing.crate": "Mysterious Crate",
+
+  "tooltip.apothic_fishing.crate.shift": "§8[Hold §7SHIFT§8 to see contents]",
+  "tooltip.apothic_fishing.crate.possible_loot": "Possible Loot:",
+  "tooltip.apothic_fishing.crate.gear_set_drop": "Gear Set: %s",
+  "tooltip.apothic_fishing.crate.random_gem": "Any %s Gem",
+  "tooltip.apothic_fishing.crate.random_enchantment": "Random Enchanted Book",
+  "tooltip.apothic_fishing.crate.invalid": "§cInvalid crate data",
+  "tooltip.apothic_fishing.crate.not_loaded": "§7Crate not yet loaded",
+
+  "crate.apothic_fishing.common_crate": "Common Fishing Crate",
+  "crate.apothic_fishing.uncommon_crate": "Uncommon Fishing Crate",
+  "crate.apothic_fishing.rare_crate": "Rare Fishing Crate",
+  "crate.apothic_fishing.epic_crate": "Epic Fishing Crate",
+  "crate.apothic_fishing.mythic_crate": "Mythic Fishing Crate",
+  "crate.apothic_fishing.ancient_crate": "Ancient Fishing Crate",
+
+  "text.apotheosis.category.fishing_rod": "Fishing Rod",
+  "text.apotheosis.category.fishing_rod.plural": "Fishing Rods",
+  "gem_class.fishing_rod": "Fishing Rods"
+}

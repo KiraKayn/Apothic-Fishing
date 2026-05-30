@@ -1,0 +1,72 @@
+{
+  "rarity": "mythic",
+  "weight": 3,
+  "quality": 8.0,
+  "dimensions": [
+    "minecraft:the_end"
+  ],
+  "biomes": [],
+  "loot": [
+    {
+      "item": "minecraft:netherite_ingot",
+      "chance": 0.25,
+      "min_count": 1,
+      "max_count": 1
+    },
+    {
+      "item": "minecraft:shulker_shell",
+      "chance": 1.0,
+      "min_count": 2,
+      "max_count": 4
+    },
+    {
+      "item": "minecraft:golden_apple",
+      "chance": 0.6,
+      "min_count": 1,
+      "max_count": 3
+    },
+    {
+      "item": "minecraft:totem_of_undying",
+      "chance": 0.10,
+      "min_count": 1,
+      "max_count": 1
+    },
+    {
+      "item": "apotheosis:mythic_material",
+      "chance": 0.5,
+      "min_count": 1,
+      "max_count": 2
+    },
+    {
+      "item": "apotheosis:gem_dust",
+      "chance": 0.6,
+      "min_count": 3,
+      "max_count": 6
+    }
+  ],
+  "gems": [],
+  "random_gems": [
+    {
+      "rarity": "mythic",
+      "chance": 0.3,
+      "blacklist": []
+    }
+  ],
+  "random_enchantments": [
+    {
+      "chance": 0.5,
+      "min_level": 3,
+      "max_level": 5,
+      "allow_curses": false,
+      "blacklist": [
+        "minecraft:mending"
+      ]
+    }
+  ],
+  "gear_sets": [
+    {
+      "gear_set": "#the_end",
+      "chance": 0.2
+    }
+  ]
+}

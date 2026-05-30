@@ -1,0 +1,55 @@
+{
+  "rarity": "uncommon",
+  "weight": 15,
+  "quality": 2.0,
+  "dimensions": [
+    "minecraft:overworld"
+  ],
+  "biomes": [],
+  "loot": [
+    {
+      "item": "minecraft:experience_bottle",
+      "chance": 1.0,
+      "min_count": 2,
+      "max_count": 6
+    },
+    {
+      "item": "minecraft:gold_ingot",
+      "chance": 1.0,
+      "min_count": 1,
+      "max_count": 4
+    },
+    {
+      "item": "minecraft:diamond",
+      "chance": 0.35,
+      "min_count": 1,
+      "max_count": 2
+    },
+    {
+      "item": "apotheosis:uncommon_material",
+      "chance": 0.5,
+      "min_count": 1,
+      "max_count": 3
+    },
+    {
+      "item": "apotheosis:gem_dust",
+      "chance": 0.2,
+      "min_count": 1,
+      "max_count": 2
+    }
+  ],
+  "gems": [],
+  "random_gems": [
+    {
+      "rarity": "uncommon",
+      "chance": 0.3,
+      "blacklist": []
+    }
+  ],
+  "gear_sets": [
+    {
+      "gear_set": "#overworld",
+      "chance": 0.15
+    }
+  ]
+}
