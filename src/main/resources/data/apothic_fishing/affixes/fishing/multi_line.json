@@ -1,0 +1,20 @@
+{
+  "type": "apothic_fishing:multi_line",
+  "values": {
+    "epic": {
+      "min": 1,
+      "steps": 1,
+      "step": 1
+    },
+    "mythic": {
+      "min": 2,
+      "steps": 1,
+      "step": 1
+    },
+    "ancient": {
+      "min": 3,
+      "steps": 1,
+      "step": 1
+    }
+  }
+}

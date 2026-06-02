@@ -1,0 +1,15 @@
+{
+  "type": "apothic_fishing:auto_fish",
+  "values": {
+    "mythic": {
+      "min": 1,
+      "steps": 1,
+      "step": 0
+    },
+    "ancient": {
+      "min": 1,
+      "steps": 1,
+      "step": 0
+    }
+  }
+}

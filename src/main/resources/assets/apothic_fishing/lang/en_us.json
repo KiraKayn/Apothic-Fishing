@@ -20,5 +20,13 @@
 
   "text.apotheosis.category.fishing_rod": "Fishing Rod",
   "text.apotheosis.category.fishing_rod.plural": "Fishing Rods",
-  "gem_class.fishing_rod": "Fishing Rods"
+  "gem_class.fishing_rod": "Fishing Rods",
+
+  "affix.apothic_fishing:fishing/multi_line": "Split-Line",
+  "affix.apothic_fishing:fishing/multi_line.suffix": "of Multiplicity",
+  "affix.apothic_fishing:fishing/multi_line.desc": "Casts %s extra lines simultaneously",
+
+  "affix.apothic_fishing:fishing/auto_fish": "Tidal Core",
+  "affix.apothic_fishing:fishing/auto_fish.suffix": "of the Auto-Fisher",
+  "affix.apothic_fishing:fishing/auto_fish.desc": "Automatically reels in fish when they bite"
 }
