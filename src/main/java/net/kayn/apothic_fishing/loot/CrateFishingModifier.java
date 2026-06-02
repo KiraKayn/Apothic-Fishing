@@ -43,7 +43,7 @@ public class CrateFishingModifier extends LootModifier {
 
         Vec3 origin = context.getParamOrNull(LootContextParams.ORIGIN);
         if (origin == null) {
-            ApothicFishing.LOGGER.warn("[ApothicFishing] Fishing loot context has no ORIGIN; skipping crate roll.");
+            ApothicFishing.LOGGER.warn("[ApothicFishing] No ORIGIN in fishing context; skipping.");
             return generatedLoot;
         }
 
@@ -64,21 +64,20 @@ public class CrateFishingModifier extends LootModifier {
         float luck = (entity instanceof Player player) ? player.getLuck() : 0f;
 
         if (CrateRegistry.INSTANCE.getValues().isEmpty()) {
-            ApothicFishing.LOGGER.debug("[ApothicFishing] CrateRegistry is empty – no crates loaded yet.");
             return generatedLoot;
         }
 
-        var result = CrateRegistry.getRandomCrateForLocation(
-                serverLevel.getRandom(), luck, dimensionId, biomeId);
+        if (serverLevel.getRandom().nextFloat() > 0.15f) return generatedLoot;
 
-        if (result.isPresent()) {
-            ResourceLocation crateId = CrateRegistry.INSTANCE.getKey(result.get());
-            if (crateId != null) {
-                ApothicFishing.LOGGER.debug("[ApothicFishing] Adding crate {} to fishing loot.", crateId);
-                generatedLoot.clear();
-                generatedLoot.add(CrateItem.createCrateStack(crateId));
-            }
-        }
+        CrateRegistry.getRandomCrateForLocation(serverLevel.getRandom(), luck, dimensionId, biomeId)
+                .ifPresent(crate -> {
+                    ResourceLocation crateId = CrateRegistry.INSTANCE.getKey(crate);
+                    if (crateId != null) {
+                        ApothicFishing.LOGGER.debug("[ApothicFishing] Replacing fishing loot with crate {}.", crateId);
+                        generatedLoot.clear();
+                        generatedLoot.add(CrateItem.createCrateStack(crateId));
+                    }
+                });
 
         return generatedLoot;
     }

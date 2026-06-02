@@ -11,6 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.Objects;
+
 @JeiPlugin
 public class AFJeiPlugin implements IModPlugin {
 
@@ -32,7 +34,7 @@ public class AFJeiPlugin implements IModPlugin {
         public String apply(ItemStack stack, UidContext context) {
             ResourceLocation crateId = CrateItem.getCrateId(stack);
             if (crateId == null) {
-                return ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+                return Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).toString();
             }
             return crateId.toString();
         }
