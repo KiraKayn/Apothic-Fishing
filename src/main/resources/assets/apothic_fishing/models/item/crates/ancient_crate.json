@@ -1,6 +1,7 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "apothic_fishing:item/crates/ancient_crate"
+    "layer0": "apothic_fishing:item/crates/ancient_crate_grey",
+    "layer1": "apothic_fishing:item/crates/ancient_crate"
   }
 }
