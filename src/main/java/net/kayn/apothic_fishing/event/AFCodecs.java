@@ -15,6 +15,8 @@ public class AFCodecs {
         e.enqueueWork(() -> {
             AffixRegistry.INSTANCE.registerCodec(new ResourceLocation("apothic_fishing", "multi_line"), MultiLineAffix.CODEC);
             AffixRegistry.INSTANCE.registerCodec(new ResourceLocation("apothic_fishing", "auto_fish"), AutoFishAffix.CODEC);
+            AffixRegistry.INSTANCE.registerCodec(new ResourceLocation("apothic_fishing", "lava_fish"), LavaFishAffix.CODEC);
+            AffixRegistry.INSTANCE.registerCodec(new ResourceLocation("apothic_fishing", "void_fish"), VoidFishAffix.CODEC);
         });
     }
 }

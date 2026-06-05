@@ -2,12 +2,17 @@ package net.kayn.apothic_fishing.adventure.affix;
 
 import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
 import net.kayn.apothic_fishing.api.ModPlayer;
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.item.FishingRodItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemFishedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -49,10 +54,8 @@ public class AffixEventHandler {
         if (angleQueue != null && !angleQueue.isEmpty()) {
             if (rod != null) {
                 ModPlayer modPlayer = (ModPlayer) player;
-
                 float savedYaw   = player.getYRot();
                 float savedPitch = player.getXRot();
-
                 InteractionHand hand = player.getMainHandItem().getItem() instanceof FishingRodItem
                         ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
 
@@ -60,7 +63,6 @@ public class AffixEventHandler {
                     float[] angles = angleQueue.poll();
                     player.setYRot(angles[0]);
                     player.setXRot(angles[1]);
-
                     recastingPlayers.add(uuid);
                     try {
                         player.gameMode.useItem(player, player.level(), player.getItemInHand(hand), hand);
@@ -89,11 +91,24 @@ public class AffixEventHandler {
 
             float[] recastAngles = computeRecastAngles(player, hook);
 
-            retrievingHooks.add(hook);
-            try {
-                hook.retrieve(rod);
-            } finally {
-                retrievingHooks.remove(hook);
+            if (SpecialFishingHandler.isSpecialHook(hook, rod)) {
+                if (!(player.level() instanceof ServerLevel serverLevel)) continue;
+                retrievingHooks.add(hook);
+                try {
+                    List<ItemStack> loot = SpecialFishingHandler.generateLoot(hook, rod, serverLevel);
+                    deliverLoot(loot, hook, player, serverLevel);
+                    CriteriaTriggers.FISHING_ROD_HOOKED.trigger((ServerPlayer) player, rod, hook, loot);
+                    hook.discard();
+                } finally {
+                    retrievingHooks.remove(hook);
+                }
+            } else {
+                retrievingHooks.add(hook);
+                try {
+                    hook.retrieve(rod);
+                } finally {
+                    retrievingHooks.remove(hook);
+                }
             }
 
             pendingRecastAngles.computeIfAbsent(uuid, k -> new ArrayDeque<>()).add(recastAngles);
@@ -114,13 +129,30 @@ public class AffixEventHandler {
         return recastingPlayers.contains(uuid);
     }
 
+    private static void deliverLoot(List<ItemStack> loot, FishingHook hook, Player player, ServerLevel level) {
+        for (ItemStack stack : loot) {
+            double dx = player.getX() - hook.getX();
+            double dy = player.getY() - hook.getY();
+            double dz = player.getZ() - hook.getZ();
+            ItemEntity item = new ItemEntity(level, hook.getX(), hook.getY(), hook.getZ(), stack);
+            item.setDeltaMovement(dx * 0.1, dy * 0.1 + Math.sqrt(Math.sqrt(dx*dx + dy*dy + dz*dz)) * 0.08 + 0.2, dz * 0.1);
+            level.addFreshEntity(item);
+            if (stack.is(Items.COD) || stack.is(Items.SALMON) || stack.is(Items.TROPICAL_FISH) || stack.is(Items.PUFFERFISH)) {
+                player.awardStat(net.minecraft.stats.Stats.FISH_CAUGHT, 1);
+            }
+        }
+        if (!loot.isEmpty()) {
+            level.addFreshEntity(new ExperienceOrb(level, player.getX(), player.getY() + 0.5, player.getZ() + 0.5, hook.level().getRandom().nextInt(6) + 1));
+        }
+    }
+
     private static float[] computeRecastAngles(Player player, FishingHook hook) {
         double dx = hook.getX() - player.getX();
         double dy = hook.getY() - player.getEyeY();
         double dz = hook.getZ() - player.getZ();
-        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        double horizDist = Math.sqrt(dx*dx + dz*dz);
         float yaw   = (float) Math.toDegrees(Math.atan2(-dx, dz));
-        float pitch = (float) (-Math.toDegrees(Math.atan2(dy, horizDist)));
+        float pitch = (float)(-Math.toDegrees(Math.atan2(dy, horizDist)));
         return new float[]{ yaw, pitch };
     }
 

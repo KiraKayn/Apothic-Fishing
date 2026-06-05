@@ -28,5 +28,14 @@
 
   "affix.apothic_fishing:fishing/auto_fish": "Tidal Core",
   "affix.apothic_fishing:fishing/auto_fish.suffix": "of the Auto-Fisher",
-  "affix.apothic_fishing:fishing/auto_fish.desc": "Automatically reels in fish when they bite"
+  "affix.apothic_fishing:fishing/auto_fish.desc": "Automatically reels in and recasts when fish bite",
+
+  "affix.apothic_fishing:fishing/lava_fish": "Molten Line",
+  "affix.apothic_fishing:fishing/lava_fish.suffix": "of the Inferno Angler",
+  "affix.apothic_fishing:fishing/lava_fish.desc": "Allows fishing in lava",
+
+  "affix.apothic_fishing:fishing/void_fish": "Void Tether",
+  "affix.apothic_fishing:fishing/void_fish.suffix": "of the Abyss",
+  "affix.apothic_fishing:fishing/void_fish.desc": "Allows fishing in the Void"
+
 }
