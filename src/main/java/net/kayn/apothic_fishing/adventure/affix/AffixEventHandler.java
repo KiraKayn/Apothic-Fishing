@@ -29,15 +29,21 @@ public class AffixEventHandler {
     private static final Map<UUID, Deque<float[]>> pendingRecastAngles = new ConcurrentHashMap<>();
     private static final Set<UUID> recastingPlayers = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private static final Set<FishingHook> retrievingHooks = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private static final Map<UUID, Map<Integer, float[]>> hookRecastCache = new ConcurrentHashMap<>();
 
     private static final Field NIBBLE;
 
     static {
         Field f = null;
-        try { f = FishingHook.class.getDeclaredField("nibble"); f.setAccessible(true); }
-        catch (NoSuchFieldException e) {
-            try { f = ObfuscationReflectionHelper.findField(FishingHook.class, "f_37113_"); f.setAccessible(true); }
-            catch (Exception ignored) {}
+        try {
+            f = FishingHook.class.getDeclaredField("nibble");
+            f.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            try {
+                f = ObfuscationReflectionHelper.findField(FishingHook.class, "f_37113_");
+                f.setAccessible(true);
+            } catch (Exception ignored) {
+            }
         }
         NIBBLE = f;
     }
@@ -54,7 +60,7 @@ public class AffixEventHandler {
         if (angleQueue != null && !angleQueue.isEmpty()) {
             if (rod != null) {
                 ModPlayer modPlayer = (ModPlayer) player;
-                float savedYaw   = player.getYRot();
+                float savedYaw = player.getYRot();
                 float savedPitch = player.getXRot();
                 InteractionHand hand = player.getMainHandItem().getItem() instanceof FishingRodItem
                         ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
@@ -87,9 +93,77 @@ public class AffixEventHandler {
         for (FishingHook hook : hooks) {
             if (hook.isRemoved()) continue;
             if (retrievingHooks.contains(hook)) continue;
-            if (getNibble(hook) <= 0) continue;
 
-            float[] recastAngles = computeRecastAngles(player, hook);
+            int nibble = getNibble(hook);
+
+            Map<Integer, float[]> cache = hookRecastCache.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>());
+            if (nibble > 0 && !cache.containsKey(hook.getId())) {
+                cache.put(hook.getId(), computeRecastAngles(player, hook));
+            } else if (nibble <= 0) {
+                cache.remove(hook.getId());
+                continue;
+            }
+
+            float[] recastAngles = cache.get(hook.getId());
+            if (recastAngles == null) continue;
+
+            if (hook.getPersistentData().getBoolean("apothic_fishing.boss_bite")) {
+                if (!(player.level() instanceof ServerLevel serverLevel)) continue;
+                retrievingHooks.add(hook);
+                try {
+                    if (SpecialFishingHandler.trySpawnAndHookBoss(hook, serverLevel)) {
+                        Object hookedIn = SpecialFishingHandler.getHookedIn(hook);
+                        if (hookedIn instanceof net.minecraft.world.entity.Entity entity) {
+                            double dx = player.getX() - entity.getX();
+                            double dy = player.getY() - entity.getY();
+                            double dz = player.getZ() - entity.getZ();
+                            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                            if (dist > 0) {
+                                double speed = Math.min(1.5, 0.18 * dist);
+                                entity.setDeltaMovement(dx / dist * speed, dy / dist * speed + 0.25, dz / dist * speed);
+                                entity.hasImpulse = true;
+                            }
+                        }
+                        hook.discard();
+                    }
+                } finally {
+                    retrievingHooks.remove(hook);
+                }
+                cache.remove(hook.getId());
+                pendingRecastAngles.computeIfAbsent(uuid, k -> new ArrayDeque<>()).add(recastAngles);
+                continue;
+            }
+
+            if (hook.getPersistentData().getBoolean("apothic_fishing.boss_bite")) {
+                if (!(player.level() instanceof ServerLevel serverLevel)) continue;
+                retrievingHooks.add(hook);
+                try {
+                    if (SpecialFishingHandler.trySpawnAndHookBoss(hook, serverLevel)) {
+                        Object hookedIn = SpecialFishingHandler.getHookedIn(hook);
+                        if (hookedIn instanceof net.minecraft.world.entity.Entity entity) {
+                            double dx = player.getX() - entity.getX();
+                            double dy = player.getY() - entity.getY();
+                            double dz = player.getZ() - entity.getZ();
+                            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                            if (dist > 0) {
+                                double speed = Math.min(1.5, 0.18 * dist);
+                                entity.setDeltaMovement(dx / dist * speed,
+                                        Math.max(0.6, dy / dist * speed + 0.5),
+                                        dz / dist * speed);
+                                entity.hasImpulse = true;
+                            }
+                        }
+                    } else {
+                        hook.getPersistentData().remove("apothic_fishing.boss_bite");
+                    }
+                    hook.discard();
+                } finally {
+                    retrievingHooks.remove(hook);
+                }
+                cache.remove(hook.getId());
+                pendingRecastAngles.computeIfAbsent(uuid, k -> new ArrayDeque<>()).add(recastAngles);
+                continue;
+            }
 
             if (SpecialFishingHandler.isSpecialHook(hook, rod)) {
                 if (!(player.level() instanceof ServerLevel serverLevel)) continue;
@@ -111,6 +185,7 @@ public class AffixEventHandler {
                 }
             }
 
+            cache.remove(hook.getId());
             pendingRecastAngles.computeIfAbsent(uuid, k -> new ArrayDeque<>()).add(recastAngles);
         }
     }
@@ -135,7 +210,7 @@ public class AffixEventHandler {
             double dy = player.getY() - hook.getY();
             double dz = player.getZ() - hook.getZ();
             ItemEntity item = new ItemEntity(level, hook.getX(), hook.getY(), hook.getZ(), stack);
-            item.setDeltaMovement(dx * 0.1, dy * 0.1 + Math.sqrt(Math.sqrt(dx*dx + dy*dy + dz*dz)) * 0.08 + 0.2, dz * 0.1);
+            item.setDeltaMovement(dx * 0.1, dy * 0.1 + Math.sqrt(Math.sqrt(dx * dx + dy * dy + dz * dz)) * 0.08 + 0.2, dz * 0.1);
             level.addFreshEntity(item);
             if (stack.is(Items.COD) || stack.is(Items.SALMON) || stack.is(Items.TROPICAL_FISH) || stack.is(Items.PUFFERFISH)) {
                 player.awardStat(net.minecraft.stats.Stats.FISH_CAUGHT, 1);
@@ -150,15 +225,19 @@ public class AffixEventHandler {
         double dx = hook.getX() - player.getX();
         double dy = hook.getY() - player.getEyeY();
         double dz = hook.getZ() - player.getZ();
-        double horizDist = Math.sqrt(dx*dx + dz*dz);
-        float yaw   = (float) Math.toDegrees(Math.atan2(-dx, dz));
-        float pitch = (float)(-Math.toDegrees(Math.atan2(dy, horizDist)));
-        return new float[]{ yaw, pitch };
+        double horizDist = Math.sqrt(dx * dx + dz * dz);
+        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        float pitch = (float) (-Math.toDegrees(Math.atan2(dy, horizDist)));
+        return new float[]{yaw, pitch};
     }
 
     private static int getNibble(FishingHook hook) {
         if (NIBBLE == null) return 0;
-        try { return (int) NIBBLE.get(hook); } catch (Exception e) { return 0; }
+        try {
+            return (int) NIBBLE.get(hook);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     private static <T> boolean hasAffix(ItemStack rod, Class<T> affixClass) {

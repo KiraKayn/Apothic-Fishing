@@ -36,6 +36,7 @@ public class SpecialFishingHandler {
     private static final java.util.Map<java.util.UUID, Double> lavaHookSurfaceY = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Map<java.util.UUID, double[]> lockedPositions = new java.util.concurrent.ConcurrentHashMap<>();
     private static final Map<Integer, double[]> clientLockedPositions = new ConcurrentHashMap<>();
+    private static final java.util.Map<java.util.UUID, net.minecraft.world.entity.Entity> hookedBosses = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static final Field NIBBLE;
     private static final Field TIME_UNTIL_LURED;
@@ -53,6 +54,7 @@ public class SpecialFishingHandler {
     private static final Object STATE_FLYING;
     private static final Object STATE_BOBBING;
     private static final Object STATE_HOOKED;
+    private static final Field HOOKED_IN;
 
     static {
         NIBBLE = field(FishingHook.class, "nibble", "f_37113_");
@@ -68,6 +70,7 @@ public class SpecialFishingHandler {
         CHECK_COLLISION = method(FishingHook.class, "checkCollision", "m_37173_");
         SHOULD_STOP_FISHING = method(FishingHook.class, "shouldStopFishing", "m_37137_", Player.class);
         REAPPLY_POSITION = method(FishingHook.class, "reapplyPosition", "m_6296_");
+        HOOKED_IN = field(FishingHook.class, "hookedIn", "f_37111_");
 
         Object flying = null, bobbing = null, hooked = null;
         try {
@@ -110,6 +113,24 @@ public class SpecialFishingHandler {
 
         Object state = get(CURRENT_STATE, hook);
         boolean isFlying = STATE_FLYING.equals(state);
+        boolean isHooked = STATE_HOOKED.equals(state);
+
+        if (isHooked) {
+
+            Object hookedIn = get(HOOKED_IN, hook);
+            if (hookedIn instanceof net.minecraft.world.entity.Entity entity
+                    && entity.getPersistentData().getBoolean("apoth.boss")) {
+                tickingHooks.add(hook);
+                try {
+                    hookedEntityTick(hook, owner);
+                } finally {
+                    tickingHooks.remove(hook);
+                }
+                return true;
+            }
+            return false;
+        }
+
         if (!inLava && !inVoid && !isFlying) return false;
 
         tickingHooks.add(hook);
@@ -121,7 +142,6 @@ public class SpecialFishingHandler {
             } else if (isFlying) {
                 flyingTick(hook, owner);
             }
-
         } finally {
             tickingHooks.remove(hook);
         }
@@ -147,6 +167,24 @@ public class SpecialFishingHandler {
     private static void lavaFishingTick(FishingHook hook, Player player) {
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
         if (shouldStopFishing(hook, player)) {
+            if (player.level() instanceof ServerLevel sl && trySpawnAndHookBoss(hook, sl)) {
+                Object hookedIn = get(HOOKED_IN, hook);
+                if (hookedIn instanceof net.minecraft.world.entity.Entity entity) {
+                    double dx = player.getX() - entity.getX();
+                    double dy = player.getY() - entity.getY();
+                    double dz = player.getZ() - entity.getZ();
+                    double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    if (dist > 0) {
+                        double speed = Math.min(1.2, 0.15 * dist);
+                        entity.setDeltaMovement(dx / dist * speed, dy / dist * speed + 0.2, dz / dist * speed);
+                        entity.hasImpulse = true;
+                    }
+                }
+                lavaHookSurfaceY.remove(hook.getUUID());
+                lockedPositions.remove(hook.getUUID());
+                hook.discard();
+                return;
+            }
             lavaHookSurfaceY.remove(hook.getUUID());
             lockedPositions.remove(hook.getUUID());
             hook.discard();
@@ -189,7 +227,10 @@ public class SpecialFishingHandler {
             return;
         }
 
-        if (STATE_HOOKED.equals(state)) return;
+        if (STATE_HOOKED.equals(state)) {
+            hookedEntityTick(hook, player);
+            return;
+        }
 
         if (STATE_BOBBING.equals(state)) {
             hook.setPos(hook.getX(), surfaceY, hook.getZ());
@@ -286,6 +327,9 @@ public class SpecialFishingHandler {
                 level.sendParticles(ParticleTypes.SMOKE, px, py, pz, 2, sin * 0.04, 0.1, -cos * 0.04, 0);
                 level.sendParticles(ParticleTypes.ASH, px, py, pz, 2, -sin * 0.04, 0.1, cos * 0.04, 1.0);
             } else {
+                if (level.getRandom().nextFloat() < net.kayn.apothic_fishing.loot.BossFishingLootModifier.getBossChance()) {
+                    hook.getPersistentData().putBoolean("apothic_fishing.boss_bite", true);
+                }
                 hook.playSound(SoundEvents.LAVA_POP, 0.25f, 1.0f + (hook.level().getRandom().nextFloat() - hook.level().getRandom().nextFloat()) * 0.4f);
                 double d = hook.getY() + 0.5;
                 level.sendParticles(ParticleTypes.LAVA, hook.getX(), d, hook.getZ(), (int) (1f + hook.getBbWidth() * 20f), hook.getBbWidth(), 0, hook.getBbWidth(), 0.2f);
@@ -321,6 +365,23 @@ public class SpecialFishingHandler {
     private static void voidFishingTick(FishingHook hook, Player player) {
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
         if (shouldStopFishing(hook, player)) {
+            if (player.level() instanceof ServerLevel sl && trySpawnAndHookBoss(hook, sl)) {
+                Object hookedIn = get(HOOKED_IN, hook);
+                if (hookedIn instanceof net.minecraft.world.entity.Entity entity) {
+                    double dx = player.getX() - entity.getX();
+                    double dy = player.getY() - entity.getY();
+                    double dz = player.getZ() - entity.getZ();
+                    double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    if (dist > 0) {
+                        double speed = Math.min(1.2, 0.15 * dist);
+                        entity.setDeltaMovement(dx / dist * speed, dy / dist * speed + 0.2, dz / dist * speed);
+                        entity.hasImpulse = true;
+                    }
+                }
+                lockedPositions.remove(hook.getUUID());
+                hook.discard();
+                return;
+            }
             lockedPositions.remove(hook.getUUID());
             hook.discard();
             return;
@@ -336,7 +397,10 @@ public class SpecialFishingHandler {
             return;
         }
 
-        if (STATE_HOOKED.equals(state)) return;
+        if (STATE_HOOKED.equals(state)) {
+            hookedEntityTick(hook, player);
+            return;
+        }
 
         if (STATE_BOBBING.equals(state)) {
             double[] pos = lockedPositions.get(hook.getUUID());
@@ -347,7 +411,6 @@ public class SpecialFishingHandler {
             voidCatchingFish(hook, serverLevel);
         }
     }
-
 
 
     private static void voidCatchingFish(FishingHook hook, ServerLevel level) {
@@ -377,6 +440,9 @@ public class SpecialFishingHandler {
                 level.sendParticles(ParticleTypes.DRAGON_BREATH, px, hook.getY(), pz, 1, sin * 0.04, 0.1, cos * 0.04, 0);
                 level.sendParticles(ParticleTypes.PORTAL, px, hook.getY(), pz, 2, sin * 0.04, 0.1, -cos * 0.04, 0.5);
             } else {
+                if (level.getRandom().nextFloat() < net.kayn.apothic_fishing.loot.BossFishingLootModifier.getBossChance()) {
+                    hook.getPersistentData().putBoolean("apothic_fishing.boss_bite", true);
+                }
                 hook.playSound(SoundEvents.ENDERMAN_AMBIENT, 0.25f, 1.0f + (hook.level().getRandom().nextFloat() - hook.level().getRandom().nextFloat()) * 0.4f);
                 level.sendParticles(ParticleTypes.DRAGON_BREATH, hook.getX(), hook.getY(), hook.getZ(), (int) (1f + hook.getBbWidth() * 20f), hook.getBbWidth(), 0, hook.getBbWidth(), 0.2f);
                 level.sendParticles(ParticleTypes.PORTAL, hook.getX(), hook.getY(), hook.getZ(), (int) (1f + hook.getBbWidth() * 20f), hook.getBbWidth(), 0, hook.getBbWidth(), 0.2f);
@@ -445,7 +511,107 @@ public class SpecialFishingHandler {
         return clientLockedPositions.containsKey(entityId);
     }
 
+    private static void hookedEntityTick(FishingHook hook, Player player) {
+        if (shouldStopFishing(hook, player)) {
+            Object hookedIn = get(HOOKED_IN, hook);
+            if (hookedIn instanceof net.minecraft.world.entity.Entity entity) {
+                double dx = player.getX() - entity.getX();
+                double dy = player.getY() - entity.getY();
+                double dz = player.getZ() - entity.getZ();
+                double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (dist > 0) {
+                    double speed = Math.min(1.2, 0.15 * dist);
+                    entity.setDeltaMovement(
+                            dx / dist * speed,
+                            dy / dist * speed + 0.2,
+                            dz / dist * speed
+                    );
+                    entity.hasImpulse = true;
+                }
+            }
+            lavaHookSurfaceY.remove(hook.getUUID());
+            lockedPositions.remove(hook.getUUID());
+            hook.discard();
+            return;
+        }
 
+        Object hookedIn = get(HOOKED_IN, hook);
+        if (hookedIn instanceof net.minecraft.world.entity.Entity entity && !entity.isRemoved()) {
+            double dx = hook.getX() - entity.getX();
+            double dy = hook.getY() - entity.getY();
+            double dz = hook.getZ() - entity.getZ();
+            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (dist > 0.5) {
+                double speed = 0.12;
+                entity.setDeltaMovement(
+                        entity.getDeltaMovement().add(dx / dist * speed, dy / dist * speed, dz / dist * speed)
+                );
+                entity.hasImpulse = true;
+            }
+        }
+    }
+
+    public static boolean trySpawnAndHookBoss(FishingHook hook, ServerLevel level) {
+        Player player = hook.getPlayerOwner();
+        if (player == null) return false;
+
+        if (!hook.getPersistentData().getBoolean("apothic_fishing.boss_bite")) return false;
+        hook.getPersistentData().remove("apothic_fishing.boss_bite");
+
+        dev.shadowsoffire.apotheosis.adventure.boss.ApothBoss bossDef =
+                dev.shadowsoffire.apotheosis.adventure.boss.BossRegistry.INSTANCE.getRandomItem(
+                        level.getRandom(), player.getLuck(),
+                        dev.shadowsoffire.placebo.reload.WeightedDynamicRegistry.IDimensional.matches(level)
+                );
+        if (bossDef == null) return false;
+
+        BlockPos hookPos = hook.blockPosition();
+        BlockPos spawnPos = findSpawnAboveLava(hook, hookPos, level);
+
+        net.minecraft.world.entity.Mob mob;
+        try {
+            mob = bossDef.createBoss(level, spawnPos, level.getRandom(), player.getLuck(), null);
+        } catch (Throwable t) {
+            return false;
+        }
+
+        if (mob.getPersistentData().getBoolean("apoth_hostility.discard")) {
+            mob.discard();
+            return false;
+        }
+
+        level.addFreshEntityWithPassengers(mob);
+
+        try {
+            java.lang.reflect.Method setHooked = FishingHook.class.getDeclaredMethod(
+                    "setHookedEntity", net.minecraft.world.entity.Entity.class);
+            setHooked.setAccessible(true);
+            setHooked.invoke(hook, mob);
+        } catch (Exception e) {
+            return false;
+        }
+
+        set(CURRENT_STATE, hook, STATE_HOOKED);
+        setBiting(hook, false);
+        return true;
+    }
+
+    private static BlockPos findSpawnAboveLava(FishingHook hook, BlockPos hookPos, ServerLevel level) {
+        BlockPos check = hookPos;
+        for (int i = 0; i <= 10; i++) {
+            BlockPos above = hookPos.above(i);
+            if (!level.getFluidState(above).is(FluidTags.LAVA)
+                    && !level.getFluidState(above.above()).is(FluidTags.LAVA)) {
+                check = above;
+                break;
+            }
+        }
+        return check;
+    }
+
+    public static Object getHookedIn(FishingHook hook) {
+        return get(HOOKED_IN, hook);
+    }
 
     public static List<ItemStack> generateLoot(FishingHook hook, ItemStack rod, ServerLevel level) {
         Player player = hook.getPlayerOwner();

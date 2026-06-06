@@ -1,0 +1,10 @@
+{
+  "type": "apothic_fishing:boss_fishing",
+  "boss_chance": 0.05,
+  "conditions": [
+    {
+      "condition": "minecraft:location_check",
+      "predicate": {}
+    }
+  ]
+}

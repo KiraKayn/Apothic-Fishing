@@ -1,6 +1,7 @@
 {
   "replace": false,
   "entries": [
-    "apothic_fishing:crate_fishing"
+    "apothic_fishing:crate_fishing",
+    "apothic_fishing:boss_fishing"
   ]
 }
