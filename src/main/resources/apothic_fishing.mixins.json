@@ -4,8 +4,8 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "apothic_fishing.refmap.json",
   "mixins": [
-    "FishingHookCanHitEntityMixin",
-    "FishingHookCollisionMixin",
+    "FishingHookAccessor",
+    "FishingHookMixin",
     "FishingHookOwnerMixin",
     "FishingHookRetrieveMixin",
     "FishingHookSpecialMixin",

@@ -20,6 +20,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.List;
+
 @Mixin(FishingRodItem.class)
 public class FishingRodMixin extends Item {
 
@@ -42,7 +44,9 @@ public class FishingRodMixin extends Item {
                 if (!level.isClientSide) {
                     int lure = EnchantmentHelper.getFishingSpeedBonus(stack);
                     int luck = EnchantmentHelper.getFishingLuckBonus(stack);
-                    level.addFreshEntity(new FishingHook(player, level, luck, lure));
+                    FishingHook newHook = new FishingHook(player, level, luck, lure);
+                    level.addFreshEntity(newHook);
+                    player.fishing = newHook;
                 }
                 player.awardStat(Stats.ITEM_USED.get(this));
                 player.gameEvent(GameEvent.ITEM_INTERACT_START);
@@ -56,6 +60,8 @@ public class FishingRodMixin extends Item {
             if (!level.isClientSide) {
                 int damage = looking.retrieve(stack);
                 stack.hurtAndBreak(damage, player, p -> p.broadcastBreakEvent(hand));
+                List<FishingHook> remaining = modPlayer.apothic$getHooks();
+                player.fishing = remaining.isEmpty() ? null : remaining.get(0);
             }
             cir.setReturnValue(InteractionResultHolder.sidedSuccess(stack, level.isClientSide()));
         }

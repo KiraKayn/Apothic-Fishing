@@ -1,5 +1,7 @@
 package net.kayn.apothic_fishing.mixin;
 
+import net.kayn.apothic_fishing.adventure.affix.ModHelper;
+import net.kayn.apothic_fishing.adventure.affix.SpecialFishingHandler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
@@ -9,10 +11,25 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.lang.reflect.Method;
-
 @Mixin(FishingHook.class)
 public abstract class FishingHookRetrieveMixin {
+
+    @Inject(method = "retrieve", at = @At("HEAD"), cancellable = true)
+    private void onRetrieveHead(ItemStack rod, CallbackInfoReturnable<Integer> cir) {
+        FishingHook self = (FishingHook) (Object) this;
+        if (self.level().isClientSide()) return;
+
+        Player player = self.getPlayerOwner();
+        if (player == null) return;
+
+        ItemStack heldRod = ModHelper.getHeldRod(player);
+        if (heldRod == null) return;
+
+        if (SpecialFishingHandler.isSpecialHook(self, heldRod)) {
+            int damage = SpecialFishingHandler.retrieveSpecial(self, heldRod);
+            cir.setReturnValue(damage);
+        }
+    }
 
     @Inject(
             method = "retrieve",
@@ -22,31 +39,29 @@ public abstract class FishingHookRetrieveMixin {
     private void onRetrieveBeforeDiscard(ItemStack rod, CallbackInfoReturnable<Integer> cir) {
         FishingHook self = (FishingHook) (Object) this;
         if (self.level().isClientSide()) return;
-        if (!self.getPersistentData().contains("apothic_fishing.hooked_boss_id")) return;
 
-        int bossId = self.getPersistentData().getInt("apothic_fishing.hooked_boss_id");
-        self.getPersistentData().remove("apothic_fishing.hooked_boss_id");
+        Player player = self.getPlayerOwner();
+        if (player == null) return;
 
-        Entity boss = self.level().getEntity(bossId);
-        if (boss == null || boss.isRemoved()) {
+        ItemStack heldRod = ModHelper.getHeldRod(player);
+        if (heldRod != null && SpecialFishingHandler.isSpecialHook(self, heldRod)) {
             return;
         }
 
-        Player player = self.getPlayerOwner();
-        if (player != null) {
-            double dx = player.getX() - boss.getX();
-            double dy = player.getY() - boss.getY();
-            double dz = player.getZ() - boss.getZ();
+        Entity hooked = ((FishingHookAccessor) self).getHookedIn();
+        if (hooked != null) {
+            double dx = player.getX() - hooked.getX();
+            double dy = player.getY() - hooked.getY();
+            double dz = player.getZ() - hooked.getZ();
             double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
             if (dist > 0) {
                 double speed = Math.min(1.5, 0.18 * dist);
-                boss.setDeltaMovement(dx / dist * speed, dy / dist * speed + 0.25, dz / dist * speed);
-                boss.hasImpulse = true;
+                hooked.setDeltaMovement(dx / dist * speed, dy / dist * speed + 0.25, dz / dist * speed);
+                hooked.hasImpulse = true;
             }
+            self.discard();
+            cir.setReturnValue(1);
+            cir.cancel();
         }
-
-        self.discard();
-        cir.setReturnValue(1);
-        cir.cancel();
     }
 }

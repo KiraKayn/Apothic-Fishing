@@ -2,6 +2,7 @@ package net.kayn.apothic_fishing.adventure.affix;
 
 import dev.shadowsoffire.apotheosis.adventure.affix.AffixHelper;
 import net.kayn.apothic_fishing.api.ModPlayer;
+import net.kayn.apothic_fishing.mixin.FishingHookAccessor;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -95,7 +96,6 @@ public class AffixEventHandler {
             if (retrievingHooks.contains(hook)) continue;
 
             int nibble = getNibble(hook);
-
             Map<Integer, float[]> cache = hookRecastCache.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>());
             if (nibble > 0 && !cache.containsKey(hook.getId())) {
                 cache.put(hook.getId(), computeRecastAngles(player, hook));
@@ -107,72 +107,11 @@ public class AffixEventHandler {
             float[] recastAngles = cache.get(hook.getId());
             if (recastAngles == null) continue;
 
-            if (hook.getPersistentData().getBoolean("apothic_fishing.boss_bite")) {
+            if (hook.getPersistentData().getBoolean("apothic_fishing.boss_bite") || SpecialFishingHandler.isSpecialHook(hook, rod)) {
                 if (!(player.level() instanceof ServerLevel serverLevel)) continue;
                 retrievingHooks.add(hook);
                 try {
-                    if (SpecialFishingHandler.trySpawnAndHookBoss(hook, serverLevel)) {
-                        Object hookedIn = SpecialFishingHandler.getHookedIn(hook);
-                        if (hookedIn instanceof net.minecraft.world.entity.Entity entity) {
-                            double dx = player.getX() - entity.getX();
-                            double dy = player.getY() - entity.getY();
-                            double dz = player.getZ() - entity.getZ();
-                            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                            if (dist > 0) {
-                                double speed = Math.min(1.5, 0.18 * dist);
-                                entity.setDeltaMovement(dx / dist * speed, dy / dist * speed + 0.25, dz / dist * speed);
-                                entity.hasImpulse = true;
-                            }
-                        }
-                        hook.discard();
-                    }
-                } finally {
-                    retrievingHooks.remove(hook);
-                }
-                cache.remove(hook.getId());
-                pendingRecastAngles.computeIfAbsent(uuid, k -> new ArrayDeque<>()).add(recastAngles);
-                continue;
-            }
-
-            if (hook.getPersistentData().getBoolean("apothic_fishing.boss_bite")) {
-                if (!(player.level() instanceof ServerLevel serverLevel)) continue;
-                retrievingHooks.add(hook);
-                try {
-                    if (SpecialFishingHandler.trySpawnAndHookBoss(hook, serverLevel)) {
-                        Object hookedIn = SpecialFishingHandler.getHookedIn(hook);
-                        if (hookedIn instanceof net.minecraft.world.entity.Entity entity) {
-                            double dx = player.getX() - entity.getX();
-                            double dy = player.getY() - entity.getY();
-                            double dz = player.getZ() - entity.getZ();
-                            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                            if (dist > 0) {
-                                double speed = Math.min(1.5, 0.18 * dist);
-                                entity.setDeltaMovement(dx / dist * speed,
-                                        Math.max(0.6, dy / dist * speed + 0.5),
-                                        dz / dist * speed);
-                                entity.hasImpulse = true;
-                            }
-                        }
-                    } else {
-                        hook.getPersistentData().remove("apothic_fishing.boss_bite");
-                    }
-                    hook.discard();
-                } finally {
-                    retrievingHooks.remove(hook);
-                }
-                cache.remove(hook.getId());
-                pendingRecastAngles.computeIfAbsent(uuid, k -> new ArrayDeque<>()).add(recastAngles);
-                continue;
-            }
-
-            if (SpecialFishingHandler.isSpecialHook(hook, rod)) {
-                if (!(player.level() instanceof ServerLevel serverLevel)) continue;
-                retrievingHooks.add(hook);
-                try {
-                    List<ItemStack> loot = SpecialFishingHandler.generateLoot(hook, rod, serverLevel);
-                    deliverLoot(loot, hook, player, serverLevel);
-                    CriteriaTriggers.FISHING_ROD_HOOKED.trigger((ServerPlayer) player, rod, hook, loot);
-                    hook.discard();
+                    SpecialFishingHandler.retrieveSpecial(hook, rod);
                 } finally {
                     retrievingHooks.remove(hook);
                 }
@@ -232,12 +171,10 @@ public class AffixEventHandler {
     }
 
     private static int getNibble(FishingHook hook) {
-        if (NIBBLE == null) return 0;
-        try {
-            return (int) NIBBLE.get(hook);
-        } catch (Exception e) {
-            return 0;
+        if (hook instanceof FishingHookAccessor accessor) {
+            return accessor.getNibble();
         }
+        return 0;
     }
 
     private static <T> boolean hasAffix(ItemStack rod, Class<T> affixClass) {

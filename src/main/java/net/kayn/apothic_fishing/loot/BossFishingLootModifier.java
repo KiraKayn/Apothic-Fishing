@@ -3,6 +3,7 @@ package net.kayn.apothic_fishing.loot;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.kayn.apothic_fishing.adventure.affix.SpecialFishingHandler;
 import net.kayn.apothic_fishing.event.BossFishingHandler;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
@@ -56,7 +57,7 @@ public class BossFishingLootModifier extends LootModifier {
         Mob boss = BossFishingHandler.tryFishBoss(hook, player, serverLevel, player.getLuck());
         if (boss == null) return generatedLoot;
 
-        hook.getPersistentData().putInt("apothic_fishing.hooked_boss_id", boss.getId());
+        SpecialFishingHandler.hookEntity(hook, boss);
 
         generatedLoot.clear();
         return generatedLoot;
